@@ -642,7 +642,7 @@ async function loadMsgs(before=null){
   else{const prev=document.getElementById("msgsWrap").scrollHeight;renderMsgs(msgs,true);document.getElementById("msgsWrap").scrollTop=document.getElementById("msgsWrap").scrollHeight-prev;}
   if(msgs.length)oldestDate=msgs[0].created_at;
   document.getElementById("lmb")?.remove();
-  if(msgs.length>=50){const btn=document.createElement("div");btn.className="lmbtn";btn.id="lmb";btn.innerHTML="<button onclick='loadMsgs(""+oldestDate+"")'>Load earlier messages</button>";document.getElementById("msgsList").prepend(btn);}
+  if(msgs.length>=50){const btn=document.createElement("div");btn.className="lmbtn";btn.id="lmb";btn.innerHTML='<button onclick="loadMsgs(oldestDate)" style="background:var(--bg);border:1.5px solid var(--border);border-radius:20px;padding:6px 16px;font-size:12px;color:var(--dim);cursor:pointer">Load earlier messages</button>';document.getElementById("msgsList").prepend(btn);}
   document.getElementById("chatSub").textContent=(room.member_count||0)+" members";
 }
 
