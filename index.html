@@ -512,11 +512,11 @@ input, textarea, select { font-family: inherit; font-size: 14px; outline: none; 
 // ══════════════════════════════════════════════════════════════
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:3000/api'
-  : `${window.location.origin}/api`;
+  : 'https://family-chat-sxkg.onrender.com/api';
 
 const WS_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:3000'
-  : window.location.origin;
+  : 'https://family-chat-sxkg.onrender.com';
 
 // ══════════════════════════════════════════════════════════════
 // STATE
