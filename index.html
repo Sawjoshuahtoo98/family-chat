@@ -843,8 +843,10 @@ async function startCall(type){
   const offer=await pc.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:type==="video"});
   await pc.setLocalDescription(offer);
   callTarget=members.find(m=>m.id!==me?.id)?.id||null;
+  console.log("Calling target:",callTarget,"in room:",room.id);
   sock.emit("call:start",{roomId:room.id,callType:type});
-  if(callTarget)sock.emit("call:offer",{to:callTarget,offer,roomId:room.id,callType:type});
+  // Send offer to room so anyone can pick it up
+  sock.emit("call:offer",{to:callTarget,offer:pc.localDescription,roomId:room.id,callType:type});
 }
 
 let iceCandidateQueue=[];
@@ -882,7 +884,9 @@ async function addQueuedCandidates(){
 }
 
 async function handleOffer(from,offer,ct,caller){
-  inOffer=new RTCSessionDescription(offer);inFrom=from;callType=ct;
+  console.log("handleOffer received:",JSON.stringify({from,ct,offerType:offer?.type,hasSdp:!!offer?.sdp}));
+  if(!offer){console.error("No offer received");return;}
+  inOffer={type:offer.type,sdp:offer.sdp};inFrom=from;callType=ct;
   document.getElementById("icallName").textContent=caller?.name||"Family member";
   document.getElementById("icallLbl").textContent=ct==="video"?"📹 Incoming video call":"📞 Incoming voice call";
   document.getElementById("icall").classList.add("on");
@@ -897,6 +901,7 @@ async function acceptCall(){
   if(callType==="video")document.getElementById("callVids").style.display="flex";
   callTarget=inFrom;
   setupPC();
+  if(!inOffer||!inOffer.type){toast("Call error: invalid offer");endCall(true);return;}
   await pc.setRemoteDescription(new RTCSessionDescription(inOffer));
   const answer=await pc.createAnswer();
   await pc.setLocalDescription(answer);
