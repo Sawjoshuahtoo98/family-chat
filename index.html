@@ -582,7 +582,16 @@ function initSock(){
   sock.on("call:incoming",({from,callType:ct})=>showIcall(from,ct));
   sock.on("call:offer",({from,offer,callType:ct,caller})=>handleOffer(from,offer,ct,caller));
   sock.on("call:answer",({answer})=>handleAnswer(answer));
-  sock.on("call:ice",({candidate})=>pc?.addIceCandidate(candidate).catch(()=>{}));
+  sock.on("call:ice",async({candidate})=>{
+    if(!candidate)return;
+    const c=new RTCIceCandidate(candidate);
+    if(pc&&pc.remoteDescription){
+      await pc.addIceCandidate(c).catch(e=>console.warn("ICE error",e));
+    } else {
+      console.log("Queuing ICE candidate");
+      iceCandidateQueue.push(c);
+    }
+  });
   sock.on("call:ended",()=>endCall(true));
   sock.on("call:rejected",()=>{endCall(true);toast("Call declined");});
 }
@@ -838,7 +847,10 @@ async function startCall(type){
   if(callTarget)sock.emit("call:offer",{to:callTarget,offer,roomId:room.id,callType:type});
 }
 
+let iceCandidateQueue=[];
+
 function setupPC(){
+  iceCandidateQueue=[];
   pc=new RTCPeerConnection({iceServers:ICE});
   if(localStream)localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
   pc.ontrack=e=>{
@@ -848,8 +860,25 @@ function setupPC(){
     document.getElementById("callStatusTxt").textContent="Connected ✓";
     document.getElementById("callVids").style.display="flex";
   };
-  pc.onicecandidate=e=>{if(e.candidate&&callTarget)sock.emit("call:ice",{to:callTarget,candidate:e.candidate});};
-  pc.onconnectionstatechange=()=>{if(pc?.connectionState==="failed"){toast("Connection failed");endCall(true);}};
+  pc.onicecandidate=e=>{
+    if(e.candidate&&callTarget){
+      console.log("Sending ICE to",callTarget);
+      sock.emit("call:ice",{to:callTarget,candidate:e.candidate});
+    }
+  };
+  pc.onconnectionstatechange=()=>{
+    console.log("Connection state:",pc?.connectionState);
+    if(pc?.connectionState==="failed"){toast("Connection failed");endCall(true);}
+  };
+  pc.onicegatheringstatechange=()=>console.log("ICE gathering:",pc?.iceGatheringState);
+  pc.onsignalingstatechange=()=>console.log("Signaling state:",pc?.signalingState);
+}
+
+async function addQueuedCandidates(){
+  for(const c of iceCandidateQueue){
+    await pc?.addIceCandidate(c).catch(e=>console.warn("ICE queue error",e));
+  }
+  iceCandidateQueue=[];
 }
 
 async function handleOffer(from,offer,ct,caller){
@@ -866,11 +895,12 @@ async function acceptCall(){
   catch{toast("Mic/camera denied");endCall(true);return;}
   document.getElementById("localVid").srcObject=localStream;
   if(callType==="video")document.getElementById("callVids").style.display="flex";
-  callTarget=inFrom;setupPC();
-  await pc.setRemoteDescription(inOffer);
+  callTarget=inFrom;
+  setupPC();
+  await pc.setRemoteDescription(new RTCSessionDescription(inOffer));
   const answer=await pc.createAnswer();
   await pc.setLocalDescription(answer);
-  sock.emit("call:answer",{to:inFrom,answer});
+  sock.emit("call:answer",{to:callTarget,answer});
 }
 
 function rejectCall(){
@@ -878,7 +908,7 @@ function rejectCall(){
   if(inFrom&&sock)sock.emit("call:reject",{to:inFrom});
   inOffer=inFrom=null;
 }
-async function handleAnswer(answer){await pc?.setRemoteDescription(new RTCSessionDescription(answer));document.getElementById("callStatusTxt").textContent="Connected ✓";}
+async function handleAnswer(answer){await pc?.setRemoteDescription(new RTCSessionDescription(answer));document.getElementById("callStatusTxt").textContent="Connected ✓";await addQueuedCandidates();}
 
 function endCall(remote=false){
   if(!remote&&sock&&callTarget)sock.emit("call:end",{roomId:room?.id,to:callTarget});
