@@ -68,3 +68,26 @@ router.post('/upload', authenticate, upload.single('file'), async (req, res) => 
 router.put('/profile', authenticate, upload.single('avatar'), chat.updateProfile);
 
 export default router;
+router.get('/ice-credentials', authenticate, async (req, res) => {
+  try {
+    const response = await fetch('https://global.xirsys.net/_turn/MyFirstApp', {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from('joshsecret:6640e372-18a7-11f1-8381-a63be73edab0').toString('base64'),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ format: 'urls' })
+    });
+    const data = await response.json();
+    if (data.v && data.v.iceServers) return res.json({ iceServers: data.v.iceServers });
+    throw new Error('No iceServers');
+  } catch(e) {
+    console.error('ICE error:', e.message);
+    res.json({ iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: ['turn:ss-turn1.xirsys.com:80?transport=udp','turn:ss-turn1.xirsys.com:3478?transport=udp','turns:ss-turn1.xirsys.com:443?transport=tcp'],
+        username: 'qxyRMonVtyhGbI24_jOBXWVM8MA9FuWKuXtpJW079dAwSC2vwyFrflKvpEkUp948AAAAAGmpoKdqb3No',
+        credential: 'afa19412-18a7-11f1-9f9e-0242ac140004' }
+    ]});
+  }
+});

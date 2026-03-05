@@ -839,6 +839,12 @@ async function startCall(type){
   catch{toast("Mic/camera access denied");endCall(true);return;}
   document.getElementById("localVid").srcObject=localStream;
   if(type==="video")document.getElementById("callVids").style.display="flex";
+  try{
+    const r=await fetch(API+"/ice-credentials",{headers:{"Authorization":"Bearer "+at}});
+    const d=await r.json();
+    if(d.iceServers)ICE.length=0,d.iceServers.forEach(s=>ICE.push(s));
+    console.log("ICE servers:",JSON.stringify(ICE));
+  }catch(e){console.warn("Using fallback ICE",e);}
   setupPC();
   const offer=await pc.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:type==="video"});
   await pc.setLocalDescription(offer);
@@ -869,11 +875,21 @@ function setupPC(){
     }
   };
   pc.onconnectionstatechange=()=>{
-    console.log("Connection state:",pc?.connectionState);
-    if(pc?.connectionState==="failed"){toast("Connection failed");endCall(true);}
+    const state=pc?.connectionState;
+    console.log("Connection state:",state);
+    document.getElementById("callStatusTxt").textContent="State: "+state;
+    if(state==="connected"){document.getElementById("callStatusTxt").textContent="Connected ✓";}
+    if(state==="failed"||state==="disconnected"){toast("Connection "+state);endCall(true);}
+  };
+  pc.oniceconnectionstatechange=()=>{
+    const s=pc?.iceConnectionState;
+    console.log("ICE connection:",s);
+    document.getElementById("callStatusTxt").textContent="ICE: "+s;
+    if(s==="connected"||s==="completed"){document.getElementById("callStatusTxt").textContent="Connected ✓";}
+    if(s==="failed"){toast("ICE failed - check network");endCall(true);}
   };
   pc.onicegatheringstatechange=()=>console.log("ICE gathering:",pc?.iceGatheringState);
-  pc.onsignalingstatechange=()=>console.log("Signaling state:",pc?.signalingState);
+  pc.onsignalingstatechange=()=>console.log("Signaling:",pc?.signalingState);
 }
 
 async function addQueuedCandidates(){
