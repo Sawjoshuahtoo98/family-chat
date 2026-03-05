@@ -642,7 +642,7 @@ async function loadMsgs(before=null){
   else{const prev=document.getElementById("msgsWrap").scrollHeight;renderMsgs(msgs,true);document.getElementById("msgsWrap").scrollTop=document.getElementById("msgsWrap").scrollHeight-prev;}
   if(msgs.length)oldestDate=msgs[0].created_at;
   document.getElementById("lmb")?.remove();
-  if(msgs.length>=50){const btn=document.createElement("div");btn.className="lmbtn";btn.id="lmb";btn.innerHTML='<button onclick="loadMsgs(oldestDate)" style="background:var(--bg);border:1.5px solid var(--border);border-radius:20px;padding:6px 16px;font-size:12px;color:var(--dim);cursor:pointer">Load earlier messages</button>';document.getElementById("msgsList").prepend(btn);}
+  if(msgs.length>=50){const btn=document.createElement("div");btn.className="lmbtn";btn.id="lmb";btn.innerHTML="<button onclick='loadMsgs(""+oldestDate+"")'>Load earlier messages</button>";document.getElementById("msgsList").prepend(btn);}
   document.getElementById("chatSub").textContent=(room.member_count||0)+" members";
 }
 
@@ -818,13 +818,9 @@ function closeModal(id){document.getElementById(id).style.display="none";}
 document.querySelectorAll(".ovl").forEach(o=>o.addEventListener("click",e=>{if(e.target===o)o.style.display="none";}));
 
 const ICE=[
-  {urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"},
-  {urls:"stun:stun2.l.google.com:19302"},
-  {urls:"turn:freeturn.net:3478",username:"free",credential:"free"},
-  {urls:"turns:freeturn.net:5349",username:"free",credential:"free"},
-  {urls:"turn:openrelay.metered.ca:80",username:"openrelayproject",credential:"openrelayproject"},
-  {urls:"turn:openrelay.metered.ca:443",username:"openrelayproject",credential:"openrelayproject"},
-  {urls:"turn:openrelay.metered.ca:443?transport=tcp",username:"openrelayproject",credential:"openrelayproject"},
+  {urls:"stun:stun.l.google.com:19302"},
+  {urls:"stun:ss-turn1.xirsys.com"},
+  {urls:["turn:ss-turn1.xirsys.com:80?transport=udp","turn:ss-turn1.xirsys.com:3478?transport=udp","turn:ss-turn1.xirsys.com:80?transport=tcp","turn:ss-turn1.xirsys.com:3478?transport=tcp","turns:ss-turn1.xirsys.com:443?transport=tcp","turns:ss-turn1.xirsys.com:5349?transport=tcp"],username:"qxyRMonVtyhGbI24_jOBXWVM8MA9FuWKuXtpJW079dAwSC2vwyFrflKvpEkUp948AAAAAGmpoKdqb3No",credential:"afa19412-18a7-11f1-9f9e-0242ac140004"},
 ];
 
 async function startCall(type){
