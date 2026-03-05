@@ -854,7 +854,8 @@ function renderMessageHtml(msg, isMe, showAvatar) {
   if (isDeleted) {
     bubbleContent = `<span style="opacity:.5;font-style:italic">🚫 Message deleted</span>`;
   } else if (isImg) {
-    bubbleContent = `<div class="img-bubble" onclick="openLightbox('${msg.file_url}')"><img src="${API_URL.replace('/api','')}${msg.file_url}" loading="lazy" alt="${esc(msg.file_name || 'Image')}"></div>`;
+    const imgSrc = msg.file_url.startsWith('http') ? msg.file_url : API_URL.replace('/api','') + msg.file_url;
+    bubbleContent = `<div class="img-bubble" onclick="openLightbox('${imgSrc}')"><img src="${imgSrc}" loading="lazy" alt="${esc(msg.file_name || 'Image')}"></div>`;
   } else if (isFile) {
     bubbleContent = `<div class="file-bubble">
       <div class="file-icon">📄</div>
@@ -862,7 +863,7 @@ function renderMessageHtml(msg, isMe, showAvatar) {
         <div class="file-name">${esc(msg.file_name || 'File')}</div>
         <div class="file-size">${formatSize(msg.file_size)}</div>
       </div>
-      <a href="${API_URL.replace('/api','')}${msg.file_url}" download="${esc(msg.file_name || 'file')}" style="color:var(--accent);font-size:20px;text-decoration:none">⬇️</a>
+      <a href="${msg.file_url.startsWith('http') ? msg.file_url : API_URL.replace('/api','') + msg.file_url}" download="${esc(msg.file_name || 'file')}" style="color:var(--accent);font-size:20px;text-decoration:none">⬇️</a>
     </div>`;
   } else {
     const replyHtml = msg.reply_message ? `<div class="reply-preview"><div class="reply-author">${esc(msg.reply_message.author_name)}</div>${esc((msg.reply_message.body||'').substring(0,60))}</div>` : '';
@@ -1273,7 +1274,7 @@ function scrollToBottom() {
 }
 
 function openLightbox(url) {
-  document.getElementById('lightboxImg').src = API_URL.replace('/api', '') + url;
+  document.getElementById('lightboxImg').src = url.startsWith('http') ? url : API_URL.replace('/api', '') + url;
   document.getElementById('lightbox').classList.add('open');
 }
 
