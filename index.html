@@ -1185,8 +1185,10 @@ async function startCall(type) {
 }
 
 async function handleOffer(from, offer, ct, caller) {
-  incomingOffer = offer; incomingFrom = from; callType = ct;
-  showIncomingCall(caller, ct, null);
+  incomingOffer = new RTCSessionDescription(offer);
+  incomingFrom = from;
+  callType = ct;
+  showIncomingCall(caller || { name: 'Family member' }, ct, null);
 }
 
 async function acceptCall() {
